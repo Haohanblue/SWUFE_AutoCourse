@@ -1,1 +1,0 @@
-# SWUFE_AutoCourse
