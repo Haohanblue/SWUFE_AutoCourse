@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 import re
 from login import login
 import csv
-import json  # 添加这一行
+import json
+import ast# 添加这一行
 def xkqk(load,timeout=3):
     try:
         with open('config.json', 'r') as config_file:
@@ -12,6 +13,8 @@ def xkqk(load,timeout=3):
         if config:
             load = config["MAINURL"]
             cookies = config["COOKIES"]
+            if cookies and type(cookies) == type("a"):
+                cookies = ast.literal_eval(cookies)
         s = requests.Session()
         s.cookies.update(cookies)
         headers = {

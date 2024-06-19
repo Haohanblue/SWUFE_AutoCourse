@@ -1,6 +1,6 @@
 # read.py
 import time
-
+import ast
 import requests
 import random
 from bs4 import BeautifulSoup
@@ -15,6 +15,8 @@ def read(load,timeout=3):
         if config:
             load = config["MAINURL"]
             cookies = config["COOKIES"]
+            if cookies and type(cookies) == type("a"):
+                cookies = ast.literal_eval(cookies)
         s = requests.Session()
         s.cookies.update(cookies)
         headers = {
@@ -70,5 +72,6 @@ if __name__ == "__main__":
     if config:
         load = config["MAINURL"]
         cookies = config["COOKIES"]
+
         result = read(load)
         print(result)

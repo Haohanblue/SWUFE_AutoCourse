@@ -10,6 +10,7 @@ from xkqk import xkqk
 import os
 import subprocess
 from clear import clear
+import ast
 monitor_process = None
 is_auto_submitting = False
 jianting_process = None
@@ -92,8 +93,8 @@ def open_config_window():
     config_window = tk.Toplevel(main_frame)
     config_window.title("修改配置文件")
     config_window.attributes('-topmost',True)
-    labels = ["学号:", "密码:", "邮箱:", "教务系统URL:","有容量的xkkh:","系统主页","Cookies"]
-    names = ['XH', 'PWD', 'TO_EMAIL', 'URL',"XKKH","MAINURL","COOKIES"]
+    labels = ["学号:", "密码:", "邮箱:", "教务系统URL:","有容量的xkkh:","系统主页","Cookies","VIEWSTATE"]
+    names = ['XH', 'PWD', 'TO_EMAIL', 'URL',"XKKH","MAINURL","COOKIES","VIEWSTATE"]
     entries = [ttk.Entry(config_window, width=40) for _ in range(len(labels))]
 
     try:
@@ -140,21 +141,26 @@ def show_alert(alert_message):
 
 def extract_alert(response_text):
     soup = BeautifulSoup(response_text, 'html.parser')
-    alert_message = soup.find('script', language="javascript").text
-    alert_content = re.search(r"alert\('(.*?)'\);", alert_message)
-    if alert_content:
-        return alert_content.group(1)
-    else:
-        message = soup.find_all('script')[-1].text
-        alert_content = re.search(r"alert\('(.*?)'\);", message)
+    try:
+        alert_message = soup.find('script', language="javascript").text
+        alert_content = re.search(r"alert\('(.*?)'\);", alert_message)
         if alert_content:
-            content = alert_content.group(1)
-            return content
+            return alert_content.group(1)
         else:
-            return "出现错误"
+            message = soup.find_all('script')[-1].text
+            alert_content = re.search(r"alert\('(.*?)'\);", message)
+            if alert_content:
+                content = alert_content.group(1)
+                return content
+            else:
+                return "出现错误"
+    except Exception as e:
+        alert_message = soup.find('title').text
+        return alert_message
 
 def submit_form():
     server_script_url = entry_server_script_url.get()
+    print(server_script_url)
     is_textbook_ordered = radio_var.get()
     course_codes = [entry.get() for entry in entry_course_codes]
     config = None
@@ -162,30 +168,69 @@ def submit_form():
         config = json.load(config_file)
     if config:
         cookies = config["COOKIES"]
+        VIEWSTATE = config["VIEWSTATE"]
+        if type(cookies) == str:
+            cookies = ast.literal_eval(cookies)
+
     for i, course_code in enumerate(course_codes, start=1):
         if course_code != "":
+            print(course_code,type(course_code))
             form_data = {
-                'serverScriptUrl': server_script_url,
-                'RadioButtonList1': is_textbook_ordered,
-                'xkkh': course_code,
                 '__EVENTTARGET': 'Button1',
-                '__EVENTARGUMENT': '',
-                '__VIEWSTATEGENERATOR': 'AC27D4D4'
+                # '__EVENTARGUMENT': '',
+                 '__VIEWSTATEGENERATOR': 'AC27D4D4',
+                '__VIEWSTATE': VIEWSTATE,
+                'xkkh': course_code,
+                'RadioButtonList1': is_textbook_ordered,
+                  }
+            headers = {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Encoding': 'gzip, deflate',
+                'Accept-Language': 'zh-CN,zh;q=0.8',
+                'Cache-Control': 'max-age=0',
+                'Connection': 'keep-alive',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cookie': f'route={cookies["route"]}',
+                'Host': 'xk.swufe.edu.cn',
+                'Origin': 'http://xk.swufe.edu.cn',
+                'Referer': server_script_url,
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
             }
-            response = requests.post(server_script_url, data=form_data,cookies=cookies)
-            if response.status_code == 200:
-                content = extract_alert(response.text)
-                alert_message = f"第{i}个：" + content
-                show_log(alert_message, True)
-                if "教师" in content or "重修" in content:
-                    with open('config.json', 'r') as config_file:
-                        config = json.load(config_file)
-                    if config:
-                        show_log("已经自动重新获取选课URL", True)
-                        login(config["URL"],config["XH"],config["PWD"])
-                        auto_fill()
-            else:
-                show_alert(f"请求失败，状态码: {response.status_code}")
+            session = requests.Session()
+            # print(cookies)
+            #
+            # session.cookies.set('route', f'{cookies["route"]}', path='/')
+            #
+            try:
+                session.cookies.update(cookies)
+                session.headers.update(headers)
+                response = session.post(server_script_url, data=form_data)
+                if response.status_code == 200:
+                    print(response.text)
+                    content = extract_alert(response.text)
+                    print(server_script_url)
+                    print(session.headers)
+                    print("responseHeader:",response.headers)
+                    print("responseURL:",response.url)
+                    print("responseCookies:",response.cookies)
+                    alert_message = f"第{i}个：" + content
+                    show_log(alert_message, True)
+                    if "教师" in content or "重修" in content:
+                        with open('config.json', 'r') as config_file:
+                            config = json.load(config_file)
+                        if config:
+                            show_log("已经自动重新获取选课URL", True)
+                            login(config["URL"],config["XH"],config["PWD"])
+                            auto_fill()
+                else:
+                    show_alert(f"请求失败，状态码: {response.status_code}")
+            except Exception as e:
+                print("出错啦")
+                show_log(e)
+                if "string indices must be integers" in str(e):
+                    show_log("Cookies已经过期，正在重新获取")
+                    get_login_url()
 
 def auto_submit_form():
     global is_auto_submitting
@@ -256,7 +301,7 @@ def open_selection_editor():
     else:
         content = []
 
-    listbox_editor = ttk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=50)
+    listbox_editor = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=50)
     listbox_editor.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
 
     # 填充Listbox

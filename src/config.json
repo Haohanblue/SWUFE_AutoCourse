@@ -1,13 +1,14 @@
 {
-    "XH": "42112036 ",
-    "PWD": "",
-    "TO_EMAIL": "",
+    "XH": "42112036",
+    "PWD": "Lihan51938349.",
+    "TO_EMAIL": "haohanblue@foxmail.com",
     "URL": "http://xk.swufe.edu.cn/",
     "FILE_PATH": "xkmc.csv",
     "SMTP_SERVER": "smtp.qq.com",
     "SMTP_PORT": 587,
     "FROM_EMAIL": "haohanblue@foxmail.com",
-    "MAINURL": "qwe",
-    "COOKIES": "eqw",
-    "XKKH": ""
+    "MAINURL": "http://xk.swufe.edu.cn/(mw53ld450tqxug45tydm3kyd)/xs_main.aspx?xh=42112036",
+    "COOKIES": "{'route': 'a609e0cd5a88d3d196664261ea1e4c5f', 'Path': '/'}",
+    "XKKH": "A16C7EA2C41D7C5301C45D721374D731443FCCDE069D1FC143F75A98A34C80EEBF0F722B06B91966",
+    "VIEWSTATE": "dDwxNDM0ODg3MTU5O3Q8cDxsPHp5ZG07c2ZiamtjO3h5O2Rxc3pqO1JMWFo7enltYzt4emI7eG07WEtLWjtjeGJtbXMxO2N4Ym1tczI7aHh3ejs+O2w8MDUyOTvlkKY75bel5ZWG566h55CG5a2m6ZmiOzIwMjI7MDvlt6XllYbnrqHnkIbvvIjmlbDlrZfljJbnrqHnkIbvvIk7MjAyMue6p+W3peWVhueuoeeQhu+8iOaVsOWtl+WMlueuoeeQhu+8iTvmnY7pn6k7MDvlhY3kv6476YeN5L+uO2k8MT47Pj47bDxpPDA+Oz47bDx0PDtsPGk8Mj47PjtsPHQ8dDw7O2w8aTwxPjs+Pjs7Pjs+Pjs+Pjs+m0CvmQwW0qS4y4eU6us3UK6lEXQ="
 }

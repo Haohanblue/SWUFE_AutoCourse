@@ -6,25 +6,27 @@ import ddddocr
 from bs4 import BeautifulSoup
 import re
 import json
-
+import ast
 def read_config(file_path='./config.json'):  # 修改这一行
     if not os.path.exists(file_path):
         return None
     with open(file_path, 'r') as file:
         config_data = json.load(file)  # 修改这一行
     return config_data
-
 def login(url, xh, pwd,timeout=3):
     try:
         config = read_config()  # 修改这一行
         mainurl = config['MAINURL']
         cookies = config['COOKIES']
-        print(mainurl,cookies)
+        if cookies and type(cookies) == str:
+            cookies = ast.literal_eval(cookies)
         #现获取MAINURL，看看MAINURL的格式是否正确
         if mainurl=="" or mainurl[-8:]!=xh or cookies == "":
             login_url=requests.get(url).url
+
         else:
             x = requests.get(mainurl,timeout=timeout,cookies=cookies)
+
             login_url = x.url
         if login_url[-8:]==xh:
             return login_url
@@ -79,6 +81,7 @@ def login(url, xh, pwd,timeout=3):
                             # 将键值对添加到字典中
                             cookie_dict[key] = value
                         config_data['COOKIES'] = cookie_dict
+
                         # 写入新的配置值到 config.json
                         with open("config.json", "w") as json_file:
                             json.dump(config_data, json_file, indent=4)
@@ -86,7 +89,7 @@ def login(url, xh, pwd,timeout=3):
                 else:
                     if response.url.endswith("zdy.htm?aspxerrorpath=/Default.aspx"):
                         return "ERROR!出错啦"
-                        print(response.url)
+
                     else:
                         print("登录失败")
     except requests.Timeout:
