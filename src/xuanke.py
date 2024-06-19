@@ -58,7 +58,7 @@ def get_login_url():
 def get_current_selection():
     try:
         config = None
-        with open('config.json', 'r') as config_file:
+        with open('./config.json', 'r') as config_file:
             config = json.load(config_file)
         if config:
             result = xkqk(config["MAINURL"])
@@ -94,7 +94,7 @@ def open_config_window():
     config_window.attributes('-topmost',True)
     labels = ["学号:", "密码:", "邮箱:", "教务系统URL:","有容量的xkkh:","系统主页","Cookies"]
     names = ['XH', 'PWD', 'TO_EMAIL', 'URL',"XKKH","MAINURL","COOKIES"]
-    entries = [tk.Entry(config_window, width=40) for _ in range(len(labels))]
+    entries = [ttk.Entry(config_window, width=40) for _ in range(len(labels))]
 
     try:
         with open("config.json", "r") as json_file:
@@ -105,7 +105,7 @@ def open_config_window():
         pass
 
     for label, entry in zip(labels, entries):
-        tk.Label(config_window, text=label).grid(sticky="w", padx=10, pady=5)
+        ttk.Label(config_window, text=label).grid(sticky="w", padx=10, pady=5)
         entry.grid(sticky="w", padx=10, pady=5)
 
     def save_config():
@@ -124,7 +124,7 @@ def open_config_window():
         except Exception as e:
             messagebox.showerror("错误", f"无法保存配置文件：{str(e)}")
 
-    button_save = tk.Button(config_window, text="保存", command=save_config)
+    button_save = ttk.Button(config_window, text="保存", command=save_config)
     button_save.grid(row=2*len(labels), column=0, columnspan=4, pady=10)
 
 def show_log(message, is_time=False):
@@ -224,7 +224,7 @@ def auto_fill():
         show_log(0, "自动填充失败")
 
 def add_course_entry():
-    new_entry = tk.Entry(main_frame, width=40)
+    new_entry = ttk.Entry(main_frame, width=40)
     new_entry.grid(row=len(entry_course_codes) + 3, column=1, padx=10, pady=5, sticky="w")
     entry_course_codes.append(new_entry)
     if len(entry_course_codes)>2:
@@ -256,7 +256,7 @@ def open_selection_editor():
     else:
         content = []
 
-    listbox_editor = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=50)
+    listbox_editor = ttk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=50)
     listbox_editor.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
 
     # 填充Listbox

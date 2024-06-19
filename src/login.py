@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 
-def read_config(file_path='config.json'):  # 修改这一行
+def read_config(file_path='./config.json'):  # 修改这一行
     if not os.path.exists(file_path):
         return None
     with open(file_path, 'r') as file:
@@ -19,6 +19,7 @@ def login(url, xh, pwd,timeout=3):
         config = read_config()  # 修改这一行
         mainurl = config['MAINURL']
         cookies = config['COOKIES']
+        print(mainurl,cookies)
         #现获取MAINURL，看看MAINURL的格式是否正确
         if mainurl=="" or mainurl[-8:]!=xh or cookies == "":
             login_url=requests.get(url).url
