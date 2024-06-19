@@ -13,6 +13,7 @@ beautifulsoup4 = "^4.12.3"
 onnxruntime = "^1.18.0"
 numpy = "1.23"
 lxml = "^5.2.2"
+pyside6 = "^6.7.2"
 
 
 [build-system]

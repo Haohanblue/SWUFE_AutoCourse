@@ -1,13 +1,16 @@
 {
-    "XH": "42112036 ",
-    "PWD": "",
+    "XH": "42112036",
+    "PWD": "Lihan51938349.",
     "TO_EMAIL": "",
-    "URL": "http://xk.swufe.edu.cn/",
+    "URL": "http://xk.swufe.edu.cn/(bq3tau3v33nrgyrfcl4hxnjj)/Default.aspx",
     "FILE_PATH": "xkmc.csv",
     "SMTP_SERVER": "smtp.qq.com",
     "SMTP_PORT": 587,
     "FROM_EMAIL": "haohanblue@foxmail.com",
-    "MAINURL": "qwe",
-    "COOKIES": "eqw",
-    "XKKH": ""
+    "MAINURL": "http://xk.swufe.edu.cn/(bq3tau3v33nrgyrfcl4hxnjj)/xs_main.aspx?xh=42112036",
+    "COOKIES": {
+        "route": "f67337b663dfe2b4b12c6f9550222805",
+        "Path": "/"
+    },
+    "XKKH": "A16C7EA2C41D7C53D8A9CD491ADA9AF6526586833C19EF397D69B1483A5655D392ADDC8BB4917C61"
 }

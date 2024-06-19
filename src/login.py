@@ -19,7 +19,6 @@ def login(url, xh, pwd,timeout=3):
         config = read_config()  # 修改这一行
         mainurl = config['MAINURL']
         cookies = config['COOKIES']
-        print(mainurl,cookies)
         #现获取MAINURL，看看MAINURL的格式是否正确
         if mainurl=="" or mainurl[-8:]!=xh or cookies == "":
             login_url=requests.get(url).url
@@ -30,11 +29,13 @@ def login(url, xh, pwd,timeout=3):
             return login_url
         else:
             ocr = ddddocr.DdddOcr(show_ad=False)
+            print(login_url)
             captcha_url = re.match(r"(http?://[^/]+/[^/]+/)", login_url).group(1)+"CheckCode.aspx"
             # 获取登录页面，以便获取验证码
             session = requests.Session()
             index = session.get(login_url,timeout=timeout)
             img = session.get(captcha_url,stream=True,timeout=timeout)
+
             set_cookie_header = index.headers.get('Set-Cookie')
             soup = BeautifulSoup(index.content, 'lxml')
             value1 = soup.find('input', {'name': "__VIEWSTATE"}).get('value')
@@ -63,7 +64,7 @@ def login(url, xh, pwd,timeout=3):
                 response = session.post(login_url, data=payload,timeout=timeout)
 
                 if response.url[-8:]==xh:
-
+                    print("登录成功")
                     with open("config.json", "r") as json_file:
                         config_data = json.load(json_file)
                         config_data['MAINURL']=response.url
