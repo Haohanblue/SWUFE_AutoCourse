@@ -2,16 +2,17 @@
 
 
 a = Analysis(
-    ['xuanke.py','login.py','xkqk.py','clear.py'],
-    pathex=['C:\\Users\\Administrator\\Desktop\\project'],
+    ['xuanke.py'],
+    pathex=[],
     binaries=[],
-    datas=[('./onnxruntime_providers_shared.dll','onnxruntime_providers_shared.dll'),('C:\\Users\\Administrator\\Desktop\\project\\venv\\Lib\\site-packages\\ddddocr\\common_old.onnx','ddddocr'),('C:\\Users\\Administrator\\Desktop\\project\\venv\\Lib\\site-packages\\ddddocr\\common.onnx','ddddocr')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
+    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -20,7 +21,6 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    icon='C:\\Users\\Administrator\\Desktop\\project\\favicon.ico',
     name='xuanke',
     debug=False,
     bootloader_ignore_signals=False,
@@ -32,6 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['favicon.ico'],
 )
 coll = COLLECT(
     exe,

@@ -2,16 +2,17 @@
 
 
 a = Analysis(
-    ['jianting.py','login.py','xkqk.py'],
-    pathex=['C:\\Users\\Administrator\\Desktop\\project'],
+    ['jianting.py'],
+    pathex=[],
     binaries=[],
-    datas=[('./onnxruntime_providers_shared.dll','onnxruntime_providers_shared.dll'),('C:\\Users\\Administrator\\Desktop\\project\\venv\\Lib\\site-packages\\ddddocr\\common_old.onnx','ddddocr'),('C:\\Users\\Administrator\\Desktop\\project\\venv\\Lib\\site-packages\\ddddocr\\common.onnx','ddddocr')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     noarchive=False,
+    optimize=0,
 )
 pyz = PYZ(a.pure)
 

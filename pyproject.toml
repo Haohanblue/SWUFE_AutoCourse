@@ -13,11 +13,12 @@ beautifulsoup4 = "^4.12.3"
 onnxruntime = "^1.18.0"
 numpy = "1.23"
 lxml = "^5.2.2"
+pyinstaller = "^6.8.0"
 
 [[tool.poetry.source]]
 name = "mirrors"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "default"
+priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]

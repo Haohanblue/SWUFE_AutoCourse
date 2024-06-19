@@ -93,7 +93,7 @@ def open_config_window():
     config_window = tk.Toplevel(main_frame)
     config_window.title("修改配置文件")
     config_window.attributes('-topmost',True)
-    labels = ["学号:", "密码:", "邮箱:", "教务系统URL:","有容量的xkkh:","系统主页","Cookies","VIEWSTATE"]
+    labels = ["学号(必填):", "密码(必填):", "邮箱:", "教务系统URL(必填):","有容量的xkkh(必填):","系统主页","Cookies","VIEWSTATE"]
     names = ['XH', 'PWD', 'TO_EMAIL', 'URL',"XKKH","MAINURL","COOKIES","VIEWSTATE"]
     entries = [ttk.Entry(config_window, width=40) for _ in range(len(labels))]
 
@@ -257,6 +257,40 @@ def auto_fill():
             xh = config["XH"]
             xkurl = re.match(r"(http?://[^/]+/[^/]+/)", baseurl).group(1)
             result = xkurl+"xsxjs.aspx?xkkh="+xkkh+"&xh="+xh
+            VIEWSTATE = config["VIEWSTATE"]
+            if VIEWSTATE =="":
+                cookies = config["COOKIES"]
+                if type(cookies) == str:
+                    cookies = ast.literal_eval(cookies)
+                session = requests.Session()
+
+
+                headers = {
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                    'Accept-Encoding': 'gzip,deflate',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+                    'Connectiong': 'keep-alive',
+                    'Cookie':f'route={cookies["route"]}',
+                    'Host': 'xk.swufe.edu.cn',
+                    'Upgrade-Insecure-Requests': '1',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                }
+                session.cookies.update(cookies)
+                session.headers.update(headers)
+                print(result)
+                response = session.get(result,headers=headers,timeout=3)
+                if response.status_code == 200:
+                    show_log("检测到VIEWSTATE为空，正在自动获取VIEWSTATE", True)
+                    content = response.text
+                    soup = BeautifulSoup(content, 'html.parser')
+                    VIEWSTATE = soup.find('input', {'name': '__VIEWSTATE'}).get('value')
+                    #将VIEWSTATE写入config.json
+                    with open("config.json", "r") as json_file:
+                        config_data = json.load(json_file)
+                        config_data['VIEWSTATE'] = VIEWSTATE
+                    with open("config.json", "w") as json_file:
+                        json.dump(config_data, json_file, indent=4)
+                        show_log("填充VIEWSTATE完毕，如需自定义请修改配置文件", True)
             if result == "三秒防刷":
                 show_log(result, True)
             else:
