@@ -10,7 +10,7 @@ import json  # 添加这一行
 def read(load,timeout=3):
     try:
         config = None
-        with open('config.json', 'r') as config_file:
+        with open('config.json', 'r',encoding='utf-8') as config_file:
             config = json.load(config_file)
         if config:
             load = config["MAINURL"]
@@ -67,7 +67,7 @@ def read(load,timeout=3):
 
 if __name__ == "__main__":
     config = None
-    with open('config.json', 'r') as config_file:
+    with open('config.json', 'r',encoding='utf-8') as config_file:
         config = json.load(config_file)
     if config:
         load = config["MAINURL"]

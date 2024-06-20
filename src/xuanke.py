@@ -1,5 +1,8 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, simpledialog
+import ttkbootstrap as ttk
+from tkinter import messagebox, scrolledtext, simpledialog
+from ttkbootstrap import Style
+from ttkbootstrap.constants import *
 import requests
 import re
 import time
@@ -18,7 +21,7 @@ jianting_process = None
 
 def open_config_window_if_empty():
     try:
-        with open("config.json", "r") as json_file:
+        with open("config.json", "r",encoding='utf-8') as json_file:
             config_data = json.load(json_file)
         if not config_data.get("XH") or not config_data.get("PWD") or not config_data.get("TO_EMAIL") or not config_data.get("URL"):
             open_config_window()
@@ -39,7 +42,7 @@ def get_login_url():
     while max_try < 3 :
         try:
             config = None
-            with open('config.json', 'r') as config_file:
+            with open('config.json', 'r',encoding='utf-8') as config_file:
                 config = json.load(config_file)
             if config:
                 login_url = login(config["URL"], config["XH"], config["PWD"])
@@ -59,7 +62,7 @@ def get_login_url():
 def get_current_selection():
     try:
         config = None
-        with open('./config.json', 'r') as config_file:
+        with open('./config.json', 'r',encoding='utf-8') as config_file:
             config = json.load(config_file)
         if config:
             result = xkqk(config["MAINURL"])
@@ -98,7 +101,7 @@ def open_config_window():
     entries = [ttk.Entry(config_window, width=40) for _ in range(len(labels))]
 
     try:
-        with open("config.json", "r") as json_file:
+        with open("config.json", "r",encoding='utf-8') as json_file:
             config_data = json.load(json_file)
             for entry, name in zip(entries, names):
                 entry.insert(0, config_data.get(name, ""))
@@ -111,7 +114,7 @@ def open_config_window():
 
     def save_config():
         try:
-            with open("config.json", "r") as json_file:
+            with open("config.json", "r",encoding='utf-8') as json_file:
                 config_data = json.load(json_file)
 
             for name, entry in zip(names, entries):
@@ -125,7 +128,7 @@ def open_config_window():
         except Exception as e:
             messagebox.showerror("错误", f"无法保存配置文件：{str(e)}")
 
-    button_save = ttk.Button(config_window, text="保存", command=save_config)
+    button_save = ttk.Button(config_window, text="保存", command=save_config,bootstyle="outline-success")
     button_save.grid(row=2*len(labels), column=0, columnspan=4, pady=10)
 
 def show_log(message, is_time=False):
@@ -163,23 +166,26 @@ def submit_form():
     print(server_script_url)
     is_textbook_ordered = radio_var.get()
     course_codes = [entry.get() for entry in entry_course_codes]
+    course_VIEWSTATE = [entry.get() for entry in entry_course_VIEWSTATE]
+
     config = None
-    with open('config.json', 'r') as config_file:
+    with open('config.json', 'r',encoding='utf-8') as config_file:
         config = json.load(config_file)
     if config:
         cookies = config["COOKIES"]
         VIEWSTATE = config["VIEWSTATE"]
         if type(cookies) == str:
             cookies = ast.literal_eval(cookies)
-
     for i, course_code in enumerate(course_codes, start=1):
         if course_code != "":
             print(course_code,type(course_code))
+            if course_VIEWSTATE[i-1] == "":
+                course_VIEWSTATE[i-1] = VIEWSTATE
             form_data = {
                 '__EVENTTARGET': 'Button1',
                 # '__EVENTARGUMENT': '',
                  '__VIEWSTATEGENERATOR': 'AC27D4D4',
-                '__VIEWSTATE': VIEWSTATE,
+                '__VIEWSTATE': course_VIEWSTATE[i-1],
                 'xkkh': course_code,
                 'RadioButtonList1': is_textbook_ordered,
                   }
@@ -249,7 +255,7 @@ def toggle_auto_submitting():
 
 def auto_fill():
     try:
-        with open('config.json', 'r') as config_file:
+        with open('config.json', 'r',encoding='utf-8') as config_file:
             config = json.load(config_file)
         if config:
             baseurl=config["MAINURL"]
@@ -263,8 +269,6 @@ def auto_fill():
                 if type(cookies) == str:
                     cookies = ast.literal_eval(cookies)
                 session = requests.Session()
-
-
                 headers = {
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                     'Accept-Encoding': 'gzip,deflate',
@@ -305,7 +309,11 @@ def auto_fill():
 def add_course_entry():
     new_entry = ttk.Entry(main_frame, width=40)
     new_entry.grid(row=len(entry_course_codes) + 3, column=1, padx=10, pady=5, sticky="w")
+    new_entry2 = ttk.Entry(main_frame, width=30)
+    new_entry2.grid(row=len(entry_course_codes) + 3, column=3, padx=10, pady=5, sticky="w")
+
     entry_course_codes.append(new_entry)
+    entry_course_VIEWSTATE.append(new_entry2)
     if len(entry_course_codes)>2:
         adjust_layout()
 
@@ -313,6 +321,9 @@ def remove_course_entry():
     if len(entry_course_codes) > 1:
         entry_to_remove = entry_course_codes.pop()
         entry_to_remove.destroy()
+        entry_to_remove2 = entry_course_VIEWSTATE.pop()
+        entry_to_remove2.destroy()
+
         if len(entry_course_codes) > 1:
             adjust_layout()
 
@@ -389,13 +400,13 @@ def open_selection_editor():
     listbox_editor.bind("<B1-Motion>", on_drag)  # 绑定鼠标拖拽事件
     listbox_editor.bind("<ButtonRelease-1>", on_release)  # 绑定鼠标释放事件
 
-    button_add_course = tk.Button(selection_editor_window, text="添加选课号", command=add_course)
+    button_add_course = ttk.Button(selection_editor_window, text="添加选课号", command=add_course,bootstyle="outline-dark")
     button_add_course.grid(row=1, column=0, pady=5)
 
-    button_delete_courses = tk.Button(selection_editor_window, text="删除选中课程", command=delete_courses)
+    button_delete_courses = ttk.Button(selection_editor_window, text="删除选中课程", command=delete_courses,bootstyle="outline-danger")
     button_delete_courses.grid(row=1, column=2, pady=5)
 
-    button_save_close = tk.Button(selection_editor_window, text="保存并关闭", command=save_and_close)
+    button_save_close = ttk.Button(selection_editor_window, text="保存并关闭", command=save_and_close,bootstyle="outline-success")
     button_save_close.grid(row=1, column=1, columnspan=1, pady=5)
 
 def clearlogin():
@@ -429,59 +440,67 @@ def adjust_layout():
         custom_interval.grid(row=len(entry_course_codes) + 3, column=1, padx=10, pady=5, sticky="w")
         button_auto_submit.grid(row=len(entry_course_codes) + 4, column=0, columnspan=2, pady=5)
         button_get_selection.grid(row=len(entry_course_codes) + 8, column=2, columnspan=1, pady=10)
-        text_result.grid(row=len(entry_course_codes) + 7, column=0, columnspan=3, pady=10)
+        text_result.grid(row=len(entry_course_codes) + 7, column=0, columnspan=5, pady=10)
         button_get_login_url.grid(row=len(entry_course_codes) + 8, column=1, columnspan=1, pady=10)
-
+        button_get_logout_url.grid(row=len(entry_course_codes) + 8, column=3, columnspan=1, pady=5)
 
 
 
 
 root = tk.Tk()
 root.title("西财教务系统脚本")
+style = Style(theme="flatly")
+window = style.master
 root.grid_columnconfigure(0, weight=1)
 root.grid_rowconfigure(0, weight=1)
 root.protocol("WM_DELETE_WINDOW", on_close)
 main_frame = ttk.Frame(root)
 main_frame.grid(row=0, column=0, padx=10, pady=10)
-button_load_codes = tk.Button(main_frame, text="填充选课代码", command=load_selection_codes)
+button_load_codes = ttk.Button(main_frame, text="填充选课代码", command=load_selection_codes,bootstyle="outline-info")
 button_load_codes.grid(row=4, column=0, pady=5)
-label_server_script_url = tk.Label(main_frame, text="本专业选课界面URL：")
-entry_server_script_url = tk.Entry(main_frame, width=40)
-label_code = tk.Label(main_frame, text="选课代码(参考全校课表)：")
+label_server_script_url = ttk.Label(main_frame, text="本专业选课界面URL：")
+entry_server_script_url = ttk.Entry(main_frame, width=40)
+label_code = ttk.Label(main_frame, text="选课代码(参考全校课表)：")
 label_textbook_ordered = tk.Label(main_frame, text="是否订购教材：")
 radio_var = tk.StringVar(value="0")
 radio_button_yes = ttk.Radiobutton(main_frame, text="是", variable=radio_var, value="1")
 radio_button_no = ttk.Radiobutton(main_frame, text="否", variable=radio_var, value="0")
 
-entry_course_codes = [tk.Entry(main_frame, width=40)]
+entry_course_codes = [ttk.Entry(main_frame, width=40)]
 entry_course_codes[0].grid(row=3, column=1, padx=10, pady=5, sticky="w")
-button_start_stop_monitor = tk.Button(main_frame, text="启动监听", command=start_stop_monitor)
+
+entry_course_VIEWSTATE = [ttk.Entry(main_frame, width=30)]
+entry_course_VIEWSTATE[0].grid(row=3, column=3, padx=10, pady=5, sticky="w")
+label_VIEWSTATE = ttk.Label(main_frame, text="VIEWSTATE(留空则使用全局)")
+label_VIEWSTATE.grid(row=2, column=3, padx=10, pady=5, sticky="w")
+
+button_start_stop_monitor = ttk.Button(main_frame, text="启动监听", command=start_stop_monitor,bootstyle="outline-warning")
 button_start_stop_monitor.grid(row=len(entry_course_codes) + 9, column=0, columnspan=1, pady=10)
-button_add_entry = tk.Button(main_frame, text="添加选课代码文本框", command=add_course_entry)
+button_add_entry = ttk.Button(main_frame, text="添加选课代码", command=add_course_entry,bootstyle="outline-info")
 button_add_entry.grid(row=3, column=2, padx=10, pady=5)
-button_remove_entry = tk.Button(main_frame, text="删除选课代码文本框", command=remove_course_entry)
+button_remove_entry = ttk.Button(main_frame, text="删除选课代码", command=remove_course_entry,bootstyle="outline-info")
 button_remove_entry.grid(row=4, column=2, padx=10, pady=5)
-button_submit = tk.Button(main_frame, text="提交", command=submit_form)
+button_submit = ttk.Button(main_frame, text="提交", command=submit_form,bootstyle="outline-info")
 button_submit.grid(row=len(entry_course_codes) + 5, column=1, columnspan=2, pady=10)
-button_get_login_url = tk.Button(main_frame, text="获取登录URL", command=get_login_url)
+button_get_login_url = ttk.Button(main_frame, text="登录", command=get_login_url,bootstyle="outline-success")
 button_get_login_url.grid(row=len(entry_course_codes) + 9, column=1, columnspan=1, pady=10)
 
-button_get_login_url = tk.Button(main_frame, text="清空登录状态", command=clearlogin)
-button_get_login_url.grid(row=6, column=1, columnspan=1, pady=5)
+button_get_logout_url = ttk.Button(main_frame, text="退出登录", command=clearlogin,bootstyle="outline-danger")
+button_get_logout_url.grid(row=len(entry_course_codes) + 9, column=3, columnspan=1, pady=5)
 
-button_config_window = tk.Button(main_frame, text="修改配置文件", command=open_config_window)
+button_config_window = ttk.Button(main_frame, text="修改配置文件", command=open_config_window,bootstyle="outline-dark")
 button_config_window.grid(row=5, column=2, pady=5)
-button_get_selection = tk.Button(main_frame, text="获取当前选课情况", command=get_current_selection)
+button_get_selection = ttk.Button(main_frame, text="获取当前选课情况", command=get_current_selection,bootstyle="outline-info")
 button_get_selection.grid(row=len(entry_course_codes) + 9, column=2, columnspan=1, pady=10)
-label_custom_interval = tk.Label(main_frame, text="抢课间隔（秒）：")
-custom_interval = tk.Entry(main_frame, width=10)
+label_custom_interval = ttk.Label(main_frame, text="抢课间隔（秒）：")
+custom_interval = ttk.Entry(main_frame, width=10)
 custom_interval.insert(tk.END, "1")
-button_edit_selection = tk.Button(main_frame, text="编辑选课号", command=open_selection_editor)
+button_edit_selection = ttk.Button(main_frame, text="编辑选课号", command=open_selection_editor,bootstyle="outline-dark")
 button_edit_selection.grid(row= 6, column=2, pady=5)
-button_auto_submit = tk.Button(main_frame, text="自动抢课", command=toggle_auto_submitting)
-button_auto_fill = tk.Button(main_frame, text="自动填充", command=auto_fill)
+button_auto_submit = ttk.Button(main_frame, text="自动抢课", command=toggle_auto_submitting,bootstyle="outline-prime")
+button_auto_fill = ttk.Button(main_frame, text="自动填充", command=auto_fill,bootstyle="outline-info")
 
-text_result = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, height=15, width=70, state=tk.DISABLED)
+text_result = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, height=15, width=110, state=tk.DISABLED)
 text_result.grid(row=7, column=0, columnspan=5, pady=10)
 
 label_server_script_url.grid(row=0, column=0, padx=10, pady=5, sticky="w")

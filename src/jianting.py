@@ -47,7 +47,7 @@ def stmp(content,list):
 def jianting():
     # 获取初始文件内容
     config = None
-    with open('config.json', 'r') as config_file:
+    with open('config.json', 'r',encoding='utf-8') as config_file:
         config = json.load(config_file)
     if config:
         global smtp_server,smtp_port,from_email,password,to_email,file_path,url,xh,pwd,load

@@ -6,13 +6,18 @@ from login import login
 import csv
 import json
 import ast# 添加这一行
+import urllib
+from urllib import parse
 def xkqk(load,timeout=3):
     try:
-        with open('config.json', 'r') as config_file:
+        with open('config.json', 'r',encoding='utf-8') as config_file:
             config = json.load(config_file)
         if config:
             load = config["MAINURL"]
             cookies = config["COOKIES"]
+            # 从json文件中读取姓名，转化为url编码
+            xm = config["XM"]
+            xm = urllib.parse.quote(xm, encoding='gbk')
             if cookies and type(cookies) == type("a"):
                 cookies = ast.literal_eval(cookies)
         s = requests.Session()
@@ -26,7 +31,7 @@ def xkqk(load,timeout=3):
             'Upgrade-Insecure-Requests': '1',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
              }
-        document_url=load[:-24]+'xsxkqk.aspx?xh='+config["XH"]+"&xm=%C0%EE%BA%AB&gnmkdm=N121615"
+        document_url=load[:-24]+'xsxkqk.aspx?xh='+config["XH"]+"&xm="+xm+"&gnmkdm=N121615"
         content = s.get(document_url,headers=headers,timeout=3)
         if content.url != document_url:
             login(config["URL"], config["XH"], config["PWD"])
@@ -63,7 +68,7 @@ def xkqk(load,timeout=3):
 
 if __name__ == "__main__":
     config = None
-    with open('config.json', 'r') as config_file:
+    with open('config.json', 'r',encoding='utf-8') as config_file:
         config = json.load(config_file)
     if config:
         load = config["MAINURL"]
