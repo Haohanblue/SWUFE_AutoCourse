@@ -1,8 +1,6 @@
 # login.py
-import time
 import requests
 import os
-import ddddocr
 from bs4 import BeautifulSoup
 import re
 import json
@@ -31,8 +29,6 @@ def login(url, xh, pwd,timeout=3):
 
             return login_url
         else:
-
-            ocr = ddddocr.DdddOcr(show_ad=False)
             captcha_url = re.match(r"(http?://[^/]+/[^/]+/)", login_url).group(1)+"CheckCode.aspx"
             # 获取登录页面，以便获取验证码
             session = requests.Session()
@@ -42,65 +38,26 @@ def login(url, xh, pwd,timeout=3):
             soup = BeautifulSoup(index.content, 'lxml')
             value1 = soup.find('input', {'name': "__VIEWSTATE"}).get('value')
             value2 = soup.find('input', {'name': "__VIEWSTATEGENERATOR"}).get('value')
-            with open('captcha.gif', 'wb') as file:
-                file.write(img.content)
-            with open('captcha.gif', 'rb') as f:
-                img_bytes = f.read()
-            captcha_text = ocr.classification(img_bytes)
-            if len(captcha_text) == 4 and captcha_text.isalnum():
-                # 尝试登录
-                payload = {
-                    "__VIEWSTATE":value1,
-                    '__VIEWSTATEGENERATOR': value2,
-                    'txtUserName': xh,
-                    'TextBox2': pwd,
-                    'txtSecretCode': captcha_text,
-                    'RadioButtonList1':'%D1%A7%C9%FA',
-                    'Button1':'',
-                    'lbLanguage':'',
-                    'hidPdrs':'',
-                    'hidsc':'',
+            response = requests.post('http://tc.haohan.site:9898/ocr/file/json', files={'image': img.content})
+            if type(response.text) == type("a"):
+                result = ast.literal_eval(response.text)
+                captcha_text = result['result']
+                if result['status'] == 200 and len(captcha_text) == 4 and captcha_text.isalnum():
+                    # 尝试登录
+                    payload = {
+                        "__VIEWSTATE":value1,
+                        '__VIEWSTATEGENERATOR': value2,
+                        'txtUserName': xh,
+                        'TextBox2': pwd,
+                        'txtSecretCode': captcha_text,
+                        'RadioButtonList1':'%D1%A7%C9%FA',
+                        'Button1':'',
+                        'lbLanguage':'',
+                        'hidPdrs':'',
+                        'hidsc':'',
 
-                }
-                if type(set_cookie_header) == type("a"):
-                    parts = set_cookie_header.split(";")
-                    # 初始化一个空字典
-                    cookie_dict = {}
-                    # 遍历每个部分，提取键值对
-                    for part in parts:
-                        # 通过等号分割键和值
-                        key_value = part.strip().split("=")
-                        key = key_value[0]
-                        value = key_value[1] if len(key_value) > 1 else ""
-                        # 将键值对添加到字典中
-                        cookie_dict[key] = value
-                    cookies = cookie_dict
-                headers = {
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Accept-Language': 'zh-CN,zh;q=0.8',
-                    'Connection': 'keep-alive',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Cookie': f'route={cookies["route"]}',
-                    'Host': 'xk.swufe.edu.cn',
-                    'Origin': 'http://xk.swufe.edu.cn',
-                    'Referer': login_url,
-                    'Upgrade-Insecure-Requests': '1',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
-                }
-                session.cookies.update(cookies)
-                session.headers.update(headers)
-                response = session.post(login_url, data=payload,timeout=timeout)
-                if response.url[-8:]==xh:
-                    soup = BeautifulSoup(response.text, 'lxml')
-                    xhxm = soup.find('span', id='xhxm').text
-                    # 从xhxm提取人名，在"同学"之前的任意字符
-                    xm = re.match(r"(.+?)同学", xhxm).group(1)
-                    with open("config.json", "r",encoding = 'utf-8') as json_file:
-                        config_data = json.load(json_file)
-                        config_data['MAINURL']=response.url
-                        # 以中文字符存储姓名
-                        config_data['XM'] = xm
+                    }
+                    if type(set_cookie_header) == type("a"):
                         parts = set_cookie_header.split(";")
                         # 初始化一个空字典
                         cookie_dict = {}
@@ -112,18 +69,56 @@ def login(url, xh, pwd,timeout=3):
                             value = key_value[1] if len(key_value) > 1 else ""
                             # 将键值对添加到字典中
                             cookie_dict[key] = value
-                        config_data['COOKIES'] = cookie_dict
-                        # 写入新的配置值到 config.json
-                        with open("config.json", "w",encoding = 'utf-8') as json_file:
-                            json.dump(config_data, json_file, indent=4,ensure_ascii=False)
-                    return response.url
-                else:
-                    if response.url.endswith("zdy.htm?aspxerrorpath=/Default.aspx"):
-                        return "ERROR!出错啦"
-
+                        cookies = cookie_dict
+                    headers = {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'Accept-Language': 'zh-CN,zh;q=0.8',
+                        'Connection': 'keep-alive',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Cookie': f'route={cookies["route"]}',
+                        'Host': 'xk.swufe.edu.cn',
+                        'Origin': 'http://xk.swufe.edu.cn',
+                        'Referer': login_url,
+                        'Upgrade-Insecure-Requests': '1',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                    }
+                    session.cookies.update(cookies)
+                    session.headers.update(headers)
+                    response = session.post(login_url, data=payload,timeout=timeout)
+                    if response.url[-8:]==xh:
+                        soup = BeautifulSoup(response.text, 'lxml')
+                        xhxm = soup.find('span', id='xhxm').text
+                        # 从xhxm提取人名，在"同学"之前的任意字符
+                        xm = re.match(r"(.+?)同学", xhxm).group(1)
+                        with open("config.json", "r",encoding = 'utf-8') as json_file:
+                            config_data = json.load(json_file)
+                            config_data['MAINURL']=response.url
+                            # 以中文字符存储姓名
+                            config_data['XM'] = xm
+                            parts = set_cookie_header.split(";")
+                            # 初始化一个空字典
+                            cookie_dict = {}
+                            # 遍历每个部分，提取键值对
+                            for part in parts:
+                                # 通过等号分割键和值
+                                key_value = part.strip().split("=")
+                                key = key_value[0]
+                                value = key_value[1] if len(key_value) > 1 else ""
+                                # 将键值对添加到字典中
+                                cookie_dict[key] = value
+                            config_data['COOKIES'] = cookie_dict
+                            # 写入新的配置值到 config.json
+                            with open("config.json", "w",encoding = 'utf-8') as json_file:
+                                json.dump(config_data, json_file, indent=4,ensure_ascii=False)
+                        return response.url
                     else:
+                        if response.url.endswith("zdy.htm?aspxerrorpath=/Default.aspx"):
+                            return "ERROR!出错啦"
 
-                        print("登录失败")
+                        else:
+
+                            print("登录失败")
     except requests.Timeout:
         # 处理超时异常
         return "请求超时。正在重试..."

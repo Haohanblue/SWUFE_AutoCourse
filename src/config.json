@@ -7,8 +7,11 @@
     "SMTP_SERVER": "smtp.qq.com",
     "SMTP_PORT": 587,
     "FROM_EMAIL": "haohanblue@foxmail.com",
-    "MAINURL": "",
-    "COOKIES": "",
+    "MAINURL": "http://xk.swufe.edu.cn/(t15ysi45qvxm1nuacgvkog45)/xs_main.aspx?xh=42212022",
+    "COOKIES": {
+        "route": "8ec443a7f7de9b5306e504f087c7f89c",
+        "Path": "/"
+    },
     "XM": "陈志洁",
     "XKKH": "A16C7EA2C41D7C531CD81FCDCAD00EC43C2BEC7E460C25D5FF063AF353298D452459B473A1C68FA2",
     "VIEWSTATE": "dDwxNDM0ODg3MTU5O3Q8cDxsPHp5ZG07WVhYS0tIO3h5O1hLS1o7ZHFzemo7UkxYWjt4emI7enltYztzZmJqa2M7Y3hibW1zMTtjeGJtbXMyO3htO2h4d3o7PjtsPDA3MjQ7KDIwMjQtMjAyNS0xKS1QUlQxMDctMjAxOTAwODEtMTvotKLmlL/nqI7liqHlrabpmaI7MDsyMDIyOzA7MjAyMue6p+eojuaUtuWtpjvnqI7mlLblraY75ZCmO+WFjeS/rjvph43kv6475byg5rWp5Z+5O2k8MT47Pj47bDxpPDA+Oz47bDx0PDtsPGk8Mj47PjtsPHQ8dDw7O2w8aTwxPjs+Pjs7Pjs+Pjs+Pjs++e+eB0fr82MQlo/VvpZ61gpajrU=\n",
