@@ -14,6 +14,8 @@ import os
 import subprocess
 from clear import clear
 import ast
+import pandas as pd
+from openpyxl import load_workbook
 monitor_process = None
 is_auto_submitting = False
 jianting_process = None
@@ -213,13 +215,13 @@ def submit_form():
                 session.headers.update(headers)
                 response = session.post(server_script_url, data=form_data)
                 if response.status_code == 200:
-                    print(response.text)
+                    # print(response.text)
                     content = extract_alert(response.text)
-                    print(server_script_url)
-                    print(session.headers)
-                    print("responseHeader:",response.headers)
-                    print("responseURL:",response.url)
-                    print("responseCookies:",response.cookies)
+                    # print(server_script_url)
+                    # print(session.headers)
+                    # print("responseHeader:",response.headers)
+                    # print("responseURL:",response.url)
+                    # print("responseCookies:",response.cookies)
                     alert_message = f"第{i}个：" + content
                     show_log(alert_message, True)
                     if "教师" in content or "重修" in content:
@@ -334,101 +336,148 @@ def get_logged_in_url():
         show_log(f"登录后页面URL: {logged_in_url}", True)
     except Exception as e:
         show_alert(f"获取登录后页面URL失败：{str(e)}")
+
+
 def open_selection_editor():
+    global active_listbox
+    active_listbox = None
     selection_editor_window = tk.Toplevel(main_frame)
     selection_editor_window.title("选课代码编辑器")
 
-    # 读取选课代码.txt文件内容
-    file_path = "选课代码.txt"
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as file:
-            content = file.read().splitlines()
-    else:
-        content = []
+    # 读取Excel文件内容
+    file_path = "选课代码.xlsx"
+    workbook = load_workbook(filename=file_path)
+    sheet = workbook.active
+    label_column1 = ttk.Label(selection_editor_window, text="选课代码")
+    label_column1.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-    listbox_editor = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=50)
-    listbox_editor.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
+    listbox_column1 = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=25)
+    listbox_column1.grid(row=1, column=0, padx=10, pady=10)
+
+    label_column2 = ttk.Label(selection_editor_window, text="VIEWSTATE")
+    label_column2.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+    listbox_column2 = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=25)
+    listbox_column2.grid(row=1, column=1, padx=10, pady=10)
+
+    label_column3 = ttk.Label(selection_editor_window, text="课程名称")
+    label_column3.grid(row=0, column=2, padx=10, pady=10, sticky="w")
+    listbox_column3 = tk.Listbox(selection_editor_window, selectmode=tk.SINGLE, height=20, width=25)
+    listbox_column3.grid(row=1, column=2, padx=10, pady=10)
 
     # 填充Listbox
-    for item in content:
-        listbox_editor.insert(tk.END, item)
-
-    def add_course():
-        new_course = simpledialog.askstring("添加选课号", "请在输入新的选课号（格式形如\"(2023-2024-2)-BBA306-20064057-1\"，不包含引号）:")
-        if new_course:
-            listbox_editor.insert(tk.END, new_course)
-
-    def delete_courses():
-        selected_indices = listbox_editor.curselection()
-        for index in reversed(selected_indices):
-            listbox_editor.delete(index)
-
-    def edit_course(event):
-        selected_index = listbox_editor.curselection()
-        if selected_index:
-            selected_course = listbox_editor.get(selected_index[0])
-            edited_course = simpledialog.askstring("编辑选课号", f"修改选课号 '{selected_course}'为:", initialvalue=selected_course)
-            if edited_course and edited_course != selected_course:
-                listbox_editor.delete(selected_index[0])
-                listbox_editor.insert(selected_index[0], edited_course)
-
-    def save_and_close():
-        with open(file_path, "w", encoding="utf-8") as file:
-            for i in range(listbox_editor.size()):
-                file.write(listbox_editor.get(i) + "\n")
-        selection_editor_window.destroy()
+    for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, max_col=3, values_only=True):
+        listbox_column1.insert(tk.END, row[0])
+        listbox_column2.insert(tk.END, row[1])
+        listbox_column3.insert(tk.END, row[2])
 
     def on_select(event):
-        selection_editor_window.drag_data = {'x': event.x, 'y': event.y, 'selected': listbox_editor.nearest(event.y)}
+        # 事件处理，当前未使用，但可以在此处理选择事件
+        pass
 
-    def on_release(event):
-        if hasattr(selection_editor_window, 'drag_data'):
-            del selection_editor_window.drag_data
+    def edit_column1(event):
+        selected_index = listbox_column1.curselection()
+        if selected_index:
+            current_value = listbox_column1.get(selected_index[0])
+            new_value = simpledialog.askstring("编辑数据", "修改数据为:", initialvalue=current_value)
+            if new_value:
+                listbox_column1.delete(selected_index[0])
+                listbox_column1.insert(selected_index[0], new_value)
+                sheet.cell(row=selected_index[0] + 2, column=1, value=new_value)
 
-    def on_drag(event):
-        if hasattr(selection_editor_window, 'drag_data'):
-            selected_index = selection_editor_window.drag_data['selected']
-            new_index = listbox_editor.nearest(event.y)
-            if new_index != selected_index:
-                text = listbox_editor.get(selected_index)
-                listbox_editor.delete(selected_index)
-                listbox_editor.insert(new_index, text)
-                selection_editor_window.drag_data['selected'] = new_index
+    def edit_column2(event):
+        selected_index = listbox_column2.curselection()
+        if selected_index:
+            current_value = listbox_column2.get(selected_index[0])
+            new_value = simpledialog.askstring("编辑数据", "修改数据为:", initialvalue=current_value)
+            if new_value:
+                listbox_column2.delete(selected_index[0])
+                listbox_column2.insert(selected_index[0], new_value)
+                sheet.cell(row=selected_index[0] + 2, column=2, value=new_value)
+    def edit_column3(event):
+        selected_index = listbox_column3.curselection()
+        if selected_index:
+            current_value = listbox_column3.get(selected_index[0])
+            new_value = simpledialog.askstring("编辑数据", "修改数据为:", initialvalue=current_value)
+            if new_value:
+                listbox_column3.delete(selected_index[0])
+                listbox_column3.insert(selected_index[0], new_value)
+                sheet.cell(row=selected_index[0] + 2, column=3, value=new_value)
 
-    listbox_editor.bind("<Double-1>", edit_course)  # 绑定双击事件
-    listbox_editor.bind("<<ListboxSelect>>", on_select)  # 绑定列表选择事件
-    listbox_editor.bind("<B1-Motion>", on_drag)  # 绑定鼠标拖拽事件
-    listbox_editor.bind("<ButtonRelease-1>", on_release)  # 绑定鼠标释放事件
+    def save_and_close():
+        workbook.save(filename=file_path)
+        selection_editor_window.destroy()
 
-    button_add_course = ttk.Button(selection_editor_window, text="添加选课号", command=add_course,bootstyle="outline-dark")
-    button_add_course.grid(row=1, column=0, pady=5)
 
-    button_delete_courses = ttk.Button(selection_editor_window, text="删除选中课程", command=delete_courses,bootstyle="outline-danger")
-    button_delete_courses.grid(row=1, column=2, pady=5)
+    def add_new_code():
+        new_code = simpledialog.askstring("新增选课代码", "输入新的选课代码:")
+        if new_code:
+            listbox_column1.insert(tk.END, new_code)
+            # 添加数据到Excel文件
+            new_row = sheet.max_row + 1
+            sheet.cell(row=new_row, column=1, value=new_code)
+
+    def add_new_viewstate():
+        new_viewstate = simpledialog.askstring("新增VIEWSTATE", "输入新的VIEWSTATE:")
+        if new_viewstate:
+            listbox_column2.insert(tk.END, new_viewstate)
+            # 更新Excel文件中相应的列
+            new_row = sheet.max_row + 1
+            sheet.cell(row=new_row, column=2, value=new_viewstate)
+    def add_new_name():
+        new_name = simpledialog.askstring("新增名称", "输入新的名称:")
+        if new_name:
+            listbox_column3.insert(tk.END, new_name)
+            # 更新Excel文件中相应的列
+            new_row = sheet.max_row + 1
+            sheet.cell(row=new_row, column=3, value=new_name)
+    def update_active_listbox(event):
+        global active_listbox
+        active_listbox = event.widget
+
+
+    listbox_column1.bind("<Double-1>", edit_column1)  # 绑定双击事件到第一列
+    listbox_column2.bind("<Double-1>", edit_column2)  # 绑定双击事件到第二列
+    listbox_column3.bind("<Double-1>", edit_column3)  # 绑定双击事件到第三列
+
+    # 为选课代码和VIEWSTATE分别添加按钮
+    button_add_code = ttk.Button(selection_editor_window, text="添加新选课代码", command=add_new_code,bootstyle="outline-prime")
+    button_add_viewstate = ttk.Button(selection_editor_window, text="添加新VIEWSTATE", command=add_new_viewstate,bootstyle="outline-prime")
+    button_add_name = ttk.Button(selection_editor_window, text="添加新名称", command=add_new_name,bootstyle="outline-prime")
+
+    button_add_code.grid(row=2, column=0, padx=2, pady=2)
+    button_add_viewstate.grid(row=2, column=1, padx=2, pady=2)
+    button_add_name.grid(row=2, column=2, padx=2, pady=2)
+
 
     button_save_close = ttk.Button(selection_editor_window, text="保存并关闭", command=save_and_close,bootstyle="outline-success")
-    button_save_close.grid(row=1, column=1, columnspan=1, pady=5)
+    button_save_close.grid(row=4, column=0, columnspan=3, pady=1)
+
 
 def clearlogin():
     clear()
     show_log("已清空MAINURL和COOKIES",True)
 def load_selection_codes():
     try:
-        file_path = "选课代码.txt"
+        file_path = "选课代码.xlsx"
         if os.path.exists(file_path):
-            with open(file_path, "r", encoding="utf-8") as file:
-                content = file.read().splitlines()
-                for i, code in enumerate(content, start=1):
-                    if i <= len(entry_course_codes):
-                        entry_course_codes[i - 1].delete(0, tk.END)
-                        entry_course_codes[i - 1].insert(tk.END, code)
-                    else:
-                        add_course_entry()
-                        entry_course_codes[-1].delete(0, tk.END)
-                        entry_course_codes[-1].insert(tk.END, code)
-                show_alert("已全部填充完毕")
+            df = pd.read_excel('选课代码.xlsx')  # 假设第一列是我们需要的数据
+            course_code = df["course_code"].dropna().astype(str).tolist()
+            course_VIEWSTATE = df['VIEWSTATE'].fillna('').astype(str).tolist()
+            for i, code in enumerate(course_code, start=1):
+                if i <= len(entry_course_codes):
+                    entry_course_codes[i - 1].delete(0, tk.END)
+                    entry_course_codes[i - 1].insert(tk.END, code)
+                    entry_course_VIEWSTATE[i - 1].delete(0, tk.END)
+                    entry_course_VIEWSTATE[i - 1].insert(tk.END, course_VIEWSTATE[i - 1])
+                else:
+                    add_course_entry()
+                    entry_course_codes[-1].delete(0, tk.END)
+                    entry_course_codes[-1].insert(tk.END, code)
+                    entry_course_VIEWSTATE[i - 1].delete(0, tk.END)
+                    entry_course_VIEWSTATE[i - 1].insert(tk.END, course_VIEWSTATE[i - 1])
+            show_alert("选课代码已全部填充完毕")
         else:
-            show_alert("选课代码.txt 文件不存在")
+            show_alert("选课代码.xlsx 文件不存在")
     except Exception as e:
         show_alert(f"加载选课代码失败：{str(e)}")
 def adjust_layout():
@@ -495,7 +544,7 @@ button_get_selection.grid(row=len(entry_course_codes) + 9, column=2, columnspan=
 label_custom_interval = ttk.Label(main_frame, text="抢课间隔（秒）：")
 custom_interval = ttk.Entry(main_frame, width=10)
 custom_interval.insert(tk.END, "1")
-button_edit_selection = ttk.Button(main_frame, text="编辑选课号", command=open_selection_editor,bootstyle="outline-dark")
+button_edit_selection = ttk.Button(main_frame, text="编辑选课代码", command=open_selection_editor,bootstyle="outline-dark")
 button_edit_selection.grid(row= 6, column=2, pady=5)
 button_auto_submit = ttk.Button(main_frame, text="自动抢课", command=toggle_auto_submitting,bootstyle="outline-prime")
 button_auto_fill = ttk.Button(main_frame, text="自动填充", command=auto_fill,bootstyle="outline-info")
