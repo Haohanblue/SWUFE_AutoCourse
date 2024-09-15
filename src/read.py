@@ -54,6 +54,9 @@ def read(load,timeout=3):
                                 login(config["URL"], config["XH"], config["PWD"])
                                 return "获取失败，请重试"
                             else:
+                                alert = extract_alert(contents.text)
+                                if contents.text=="三秒防刷":
+                                    return "三秒防刷"
                                 xsxkurl.append(str)
                 if len(xsxkurl)!=0:
                     random_number = random.randint(0, len(xsxkurl)-1)
@@ -72,6 +75,5 @@ if __name__ == "__main__":
     if config:
         load = config["MAINURL"]
         cookies = config["COOKIES"]
-
         result = read(load)
         print(result)

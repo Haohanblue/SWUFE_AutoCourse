@@ -17,7 +17,6 @@ def xkqk(load,timeout=3):
             cookies = config["COOKIES"]
             # 从json文件中读取姓名，转化为url编码
             xm = config["XM"]
-            xm = urllib.parse.quote(xm, encoding='gbk')
             if cookies and type(cookies) == type("a"):
                 cookies = ast.literal_eval(cookies)
         s = requests.Session()

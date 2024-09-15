@@ -16,6 +16,8 @@ from clear import clear
 import ast
 import pandas as pd
 from openpyxl import load_workbook
+import urllib
+import random
 monitor_process = None
 is_auto_submitting = False
 jianting_process = None
@@ -123,7 +125,7 @@ def open_config_window():
                 config_data[name] = entry.get()
 
             with open("config.json", "w") as json_file:
-                json.dump(config_data, json_file, indent=4)
+                json.dump(config_data, json_file, indent=4,ensure_ascii=False)
 
             config_window.destroy()
             messagebox.showinfo("成功", "配置文件已更新")
@@ -144,7 +146,9 @@ def show_log(message, is_time=False):
 def show_alert(alert_message):
     show_log(alert_message, True)
 
+
 def extract_alert(response_text):
+    global is_auto_submitting
     soup = BeautifulSoup(response_text, 'html.parser')
     try:
         alert_message = soup.find('script', language="javascript").text
@@ -158,14 +162,88 @@ def extract_alert(response_text):
                 content = alert_content.group(1)
                 return content
             else:
+                if is_auto_submitting:
+                    clearlogin()
+                    get_login_url()
+                    update_xkkh()
+                    auto_fill()
+                    show_log("已经自动重新xkkh和选课URL", True)
                 return "出现错误"
+
+
+
     except Exception as e:
         alert_message = soup.find('title').text
         return alert_message
-
+def read(xkmc,timeout=3):
+    try:
+        config = None
+        with open('config.json', 'r',encoding='utf-8') as config_file:
+            config = json.load(config_file)
+        if config:
+            load = config["MAINURL"]
+            cookies = config["COOKIES"]
+            xm = config["XM"]
+            if cookies and type(cookies) == type("a"):
+                cookies = ast.literal_eval(cookies)
+        s = requests.Session()
+        s.cookies.update(cookies)
+        headers = {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Encoding':'gzip,deflate',
+            'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+            'Connectiong':'keep-alive',
+            'Referer': load,
+            'Upgrade-Insecure-Requests': '1',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+             }
+        document_url=load[:-24]+'xsxk.aspx?xh='+config["XH"]+"&xm="+xm+"&gnmkdm=N121101"
+        content = s.get(document_url,headers=headers,timeout=3)
+        if content.url!=document_url:
+            login(config["URL"], config["XH"], config["PWD"])
+            return "获取失败，请重试"
+        else:
+            if content.text=="三秒防刷":
+                return "三秒防刷"
+            else:
+                soup = BeautifulSoup(content.text, 'html.parser')
+                xsxkurl=[]
+                result=soup.find_all('a',onclick=re.compile(r"xsxjs\.aspx"),string=lambda text: xkmc in text if text else False)
+                for i in result:
+                    value = i.get('onclick')
+                    match = re.search(r"window\.open\('([^']+)',", value)
+                    if match:
+                        link = match.group(1)
+                        xkurl=re.match(r"(http?://[^/]+/[^/]+/)", load).group(1)
+                        str=xkurl+link
+                        if str not in xsxkurl:
+                            contents = s.get(str,timeout=timeout)
+                            if contents.url != str:
+                                login(config["URL"], config["XH"], config["PWD"])
+                                return "获取失败，请重试"
+                            else:
+                                alert = extract_alert(contents.text)
+                                if contents.text=="三秒防刷":
+                                    return "三秒防刷"
+                                xsxkurl.append(str)
+                if len(xsxkurl)!=0:
+                    random_number = random.randint(0, len(xsxkurl)-1)
+                    # 使用正则表达式查找 xkkh 参数的值
+                    match = re.search(r"xkkh=([^&]+)", xsxkurl[random_number])
+                    if match:
+                        xkkh_value = match.group(1)
+                        return xkkh_value
+                    else:
+                        return "没有找到 xkkh 字段的值。"
+                else:
+                    return "获取的空的列表"
+    except requests.Timeout:
+        return "请求超时"
+    except Exception as e:
+        return e
 def submit_form():
     server_script_url = entry_server_script_url.get()
-    print(server_script_url)
+    # print(server_script_url)
     is_textbook_ordered = radio_var.get()
     course_codes = [entry.get() for entry in entry_course_codes]
     course_VIEWSTATE = [entry.get() for entry in entry_course_VIEWSTATE]
@@ -180,7 +258,7 @@ def submit_form():
             cookies = ast.literal_eval(cookies)
     for i, course_code in enumerate(course_codes, start=1):
         if course_code != "":
-            print(course_code,type(course_code))
+            # print(course_code,type(course_code))
             if course_VIEWSTATE[i-1] == "":
                 course_VIEWSTATE[i-1] = VIEWSTATE
             form_data = {
@@ -239,22 +317,59 @@ def submit_form():
                 if "string indices must be integers" in str(e):
                     show_log("Cookies已经过期，正在重新获取")
                     get_login_url()
-
 def auto_submit_form():
     global is_auto_submitting
     if is_auto_submitting:
-        submit_form()
+        try:
+            submit_form()
+        except Exception as e:
+            print(f"错误信息: {e}")
         main_frame.after(int(float(custom_interval.get()) * 1000), auto_submit_form)
 
+def next_multiple_of_five():
+    current_time = time.localtime()
+    current_second = current_time.tm_sec
+    # 计算下一个5的倍数秒
+    next_five = (current_second + 5 - 1) // 5 * 5
+    if next_five >= 60:
+        # 如果计算结果超过60秒，应进入下一分钟
+        next_five -= 60
+    # 计算延迟时间（单位秒）
+    delay = next_five - current_second if next_five >= current_second else next_five + 60 - current_second
+    return delay
 def toggle_auto_submitting():
     global is_auto_submitting
     is_auto_submitting = not is_auto_submitting
     if is_auto_submitting:
+        delay = next_multiple_of_five()
         show_log("已开始自动抢课", True)
-        auto_submit_form()
+        show_log(f"启动时间: {time.strftime('%H:%M:%S', time.localtime(time.time() + delay))}", True)
+        main_frame.after(delay * 1000, auto_submit_form)
     else:
         show_log("已停止自动抢课", True)
 
+def update_xkkh():
+    kcmc = custom_xkkh.get()
+    if kcmc == "":
+        show_log("请输入课程名称", True)
+        return
+    # 定义正则表达式，以确保字符串仅包含十六进制数字，并且长度为64
+    pattern = re.compile(r'^[A-F0-9]+$')
+    # 使用正则表达式匹配字符串
+    xkkh = read(kcmc)
+    if pattern.match(xkkh):
+        if type(xkkh) == str:
+            with open("config.json", "r", encoding='utf-8') as json_file:
+                config_data = json.load(json_file)
+                config_data['XKKH'] = xkkh
+
+            with open("config.json", "w", encoding='utf-8') as json_file:
+                json.dump(config_data, json_file, indent=4, ensure_ascii=False)
+                show_log(f"已更新xkkh为{xkkh}", True)
+        else:
+            show_log(f"获取xkkh失败: {xkkh}", True)
+    else:
+        show_log(f"获取到的xkkh失败{xkkh}", True)
 def auto_fill():
     try:
         with open('config.json', 'r',encoding='utf-8') as config_file:
@@ -291,10 +406,10 @@ def auto_fill():
                     soup = BeautifulSoup(content, 'html.parser')
                     VIEWSTATE = soup.find('input', {'name': '__VIEWSTATE'}).get('value')
                     #将VIEWSTATE写入config.json
-                    with open("config.json", "r") as json_file:
+                    with open("config.json", "r",encoding='utf-8') as json_file:
                         config_data = json.load(json_file)
                         config_data['VIEWSTATE'] = VIEWSTATE
-                    with open("config.json", "w") as json_file:
+                    with open("config.json", "w",encoding='utf-8') as json_file:
                         json.dump(config_data, json_file, indent=4)
                         show_log("填充VIEWSTATE完毕，如需自定义请修改配置文件", True)
             if result == "三秒防刷":
@@ -505,12 +620,13 @@ root.grid_rowconfigure(0, weight=1)
 root.protocol("WM_DELETE_WINDOW", on_close)
 main_frame = ttk.Frame(root)
 main_frame.grid(row=0, column=0, padx=10, pady=10)
+
 button_load_codes = ttk.Button(main_frame, text="填充选课代码", command=load_selection_codes,bootstyle="outline-info")
 button_load_codes.grid(row=4, column=0, pady=5)
 label_server_script_url = ttk.Label(main_frame, text="本专业选课界面URL：")
 entry_server_script_url = ttk.Entry(main_frame, width=40)
 label_code = ttk.Label(main_frame, text="选课代码(参考全校课表)：")
-label_textbook_ordered = tk.Label(main_frame, text="是否订购教材：")
+label_textbook_ordered = ttk.Label(main_frame, text="是否订购教材：")
 radio_var = tk.StringVar(value="0")
 radio_button_yes = ttk.Radiobutton(main_frame, text="是", variable=radio_var, value="1")
 radio_button_no = ttk.Radiobutton(main_frame, text="否", variable=radio_var, value="0")
@@ -563,5 +679,13 @@ button_auto_fill.grid(row=0, column=2, padx=10, pady=5)
 label_custom_interval.grid(row=5, column=0, padx=10, pady=5, sticky="w")
 custom_interval.grid(row=5, column=1, padx=10, pady=5, sticky="w")
 button_auto_submit.grid(row=6, column=0, columnspan=2, pady=5)
+
+label_xkkh = ttk.Label(main_frame, text="填写你想填充的课程名称(第一页)")
+label_xkkh.grid(row=0, column=3, sticky="w")
+custom_xkkh = ttk.Entry(main_frame, width=20)
+custom_xkkh.grid(row=1, column=3, sticky="w")
+button_auto_xkkh = ttk.Button(main_frame, text="获取xkkh", command=update_xkkh,bootstyle="outline-info")
+button_auto_xkkh.grid(row=0, column=4)
+
 open_config_window_if_empty()
 root.mainloop()

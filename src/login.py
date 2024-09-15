@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import json
 import ast
+import urllib
 def read_config(file_path='./config.json'):  # 修改这一行
     if not os.path.exists(file_path):
         return None
@@ -94,6 +95,7 @@ def login(url, xh, pwd,timeout=3):
                         with open("config.json", "r",encoding = 'utf-8') as json_file:
                             config_data = json.load(json_file)
                             config_data['MAINURL']=response.url
+                            xm = urllib.parse.quote(xm, encoding='gbk')
                             # 以中文字符存储姓名
                             config_data['XM'] = xm
                             parts = set_cookie_header.split(";")
@@ -115,9 +117,7 @@ def login(url, xh, pwd,timeout=3):
                     else:
                         if response.url.endswith("zdy.htm?aspxerrorpath=/Default.aspx"):
                             return "ERROR!出错啦"
-
                         else:
-
                             print("登录失败")
     except requests.Timeout:
         # 处理超时异常
